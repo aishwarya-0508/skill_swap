@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log in | SkillSwap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<main class="auth-shell">
+    <aside class="auth-aside">
+        <a class="brand" href="/"><span class="brand-mark">S</span>SkillSwap</a>
+        <div class="auth-pitch"><p class="eyebrow">Your next skill is closer than you think</p><h1>Good to have you back.</h1><p>Pick up where you left off and keep learning with your community.</p></div>
+        <p class="auth-foot">Share a skill. Start a conversation. Grow together.</p>
+    </aside>
+    <section class="auth-main">
+        <div class="auth-form">
+            <div class="auth-form-header">
+                <p class="eyebrow">Welcome back</p>
+                <h2>Sign in</h2>
+            </div>
+            <p>Continue building your skills and reconnect with your learning network.</p>
+            <div class="form-meta">
+                <span>Secure</span>
+                <span>Member access</span>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+            {% endwith %}
+            <form method="POST">
+                <label for="email">Email address</label>
+                <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+
+                <button type="submit">Log in</button>
+            </form>
+            <p class="auth-switch">New to SkillSwap? <a class="text-link" href="/register">Create an account</a></p>
+        </div>
+    </section>
+</main>
+</body>
+</html>

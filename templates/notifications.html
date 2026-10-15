@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notifications | SkillSwap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">S</span>SkillSwap</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/matches">Matches</a>
+        <a href="/requests">Requests</a>
+        <a href="/notifications">Notifications</a>
+        {% if is_admin %}<a href="/admin">Admin</a>{% endif %}
+        <a href="/logout">Log out</a>
+    </div>
+</nav>
+<main class="page-wrap">
+    <div class="page-heading">
+        <div><p class="eyebrow">Your updates</p><h1>Notifications</h1><p>Keep up with requests and learning exchanges.</p></div>
+        <a class="button secondary" href="/dashboard">Back to dashboard</a>
+    </div>
+    {% if notifications %}
+    <section class="notification-list" aria-label="Notifications">
+        {% for notification in notifications %}
+        <a class="notification-item {% if not notification.read %}unread{% endif %}" href="{{ notification.url }}">
+            <span class="notification-dot" aria-hidden="true"></span>
+            <span>{{ notification.message }}</span>
+            <small>{{ notification.created_at }}</small>
+        </a>
+        {% endfor %}
+    </section>
+    {% else %}
+    <section class="empty-state">
+        <h2>No notifications yet</h2>
+        <p>Updates about requests and exchanges will appear here.</p>
+    </section>
+    {% endif %}
+    {% if notifications|selectattr("read", "equalto", false)|list %}
+    <form action="/notifications/read_all" method="POST" class="notifications-action">
+        <button type="submit">Mark all as read</button>
+    </form>
+    {% endif %}
+</main>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Requests | SkillSwap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">S</span>SkillSwap</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/matches">Matches</a>
+        <a href="/requests">Requests</a>
+        <a href="/notifications">Notifications</a>
+        {% if is_admin %}<a href="/admin">Admin</a>{% endif %}
+        <a href="/logout">Log out</a>
+    </div>
+</nav>
+<main class="page-wrap">
+    <div class="page-heading">
+        <div><p class="eyebrow">Your connections</p><h1>Skill requests</h1><p>Review people who want to learn from you and track the requests you sent.</p></div>
+    </div>
+    <div class="flash-list">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        {% endwith %}
+    </div>
+    <section class="request-section">
+        <div class="section-title"><h2>Received by you</h2><span>{{ incoming|length }}</span></div>
+        {% if incoming %}
+        <div class="request-list">
+            {% for item in incoming %}
+            <article class="request-card">
+                <span class="avatar {% if loop.index is even %}alt{% endif %}" aria-hidden="true">{{ item.name[:1]|upper }}</span>
+                <div class="request-copy"><h3>{{ item.name }}</h3><p>Would like to learn <strong>{{ item.skill }}</strong> from you</p></div>
+                <span class="request-status {{ item.status }}">{{ item.status|title }}</span>
+                {% if item.status == 'pending' %}
+                <form class="request-actions" action="/respond_request" method="POST">
+                    <input type="hidden" name="email" value="{{ item.email }}"><input type="hidden" name="skill" value="{{ item.skill }}">
+                    <button type="submit" name="decision" value="accept">Accept</button>
+                    <button class="button secondary" type="submit" name="decision" value="decline">Decline</button>
+                </form>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="request-empty"><p>No one has sent you a request yet. Add teaching skills to help others find you.</p><a class="text-link" href="/dashboard">Update your skills</a></div>
+        {% endif %}
+    </section>
+    <section class="request-section sent-section">
+        <div class="section-title"><h2>Sent by you</h2><span>{{ outgoing|length }}</span></div>
+        {% if outgoing %}
+        <div class="request-list">
+            {% for item in outgoing %}
+            <article class="request-card sent-card">
+                <span class="avatar {% if loop.index is even %}alt{% endif %}" aria-hidden="true">{{ item.name[:1]|upper }}</span>
+                <div class="request-copy"><h3>{{ item.name }}</h3><p>You requested help learning <strong>{{ item.skill }}</strong></p></div>
+                <span class="request-status {{ item.status }}">{{ item.status|title }}</span>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}<div class="request-empty"><p>You have not sent any requests yet.</p><a class="text-link" href="/matches">Browse skill matches</a></div>{% endif %}
+    </section>
+</main>
+</body>
+</html>

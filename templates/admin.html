@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin statistics | SkillSwap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">S</span>SkillSwap</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/matches">Matches</a>
+        <a href="/requests">Requests</a>
+        <a href="/notifications">Notifications</a>
+        <a href="/admin">Admin</a>
+        <a href="/logout">Log out</a>
+    </div>
+</nav>
+<main class="page-wrap">
+    <div class="page-heading">
+        <div><p class="eyebrow">Platform overview</p><h1>Admin statistics</h1><p>A snapshot of SkillSwap activity.</p></div>
+        <a class="button secondary" href="/dashboard">Back to dashboard</a>
+    </div>
+    <section class="stats-row" aria-label="Platform statistics">
+        <div class="stat"><strong>{{ totals.users if totals else 0 }}</strong><span>Total members</span></div>
+        <div class="stat"><strong>{{ totals.skills if totals else 0 }}</strong><span>Distinct skills</span></div>
+        <div class="stat"><strong>{{ totals.completed_exchanges if totals else 0 }}</strong><span>Completed exchanges</span></div>
+    </section>
+    <section class="panel admin-popular">
+        <div class="panel-heading">
+            <div><h2>Popular skills</h2><p>Most frequently shared or requested skills.</p></div>
+        </div>
+        {% if popular_skills %}
+        <div class="admin-skill-list">
+            {% for skill in popular_skills %}
+            <div class="admin-skill-row"><strong>{{ skill.name }}</strong><span>{{ skill.category }}</span><b>{{ skill.profile_count }} profiles</b></div>
+            {% endfor %}
+        </div>
+        {% else %}<p class="empty-inline">Skill activity will appear here as members build their profiles.</p>{% endif %}
+    </section>
+</main>
+</body>
+</html>

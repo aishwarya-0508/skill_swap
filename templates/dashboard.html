@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard | SkillSwap</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">S</span>SkillSwap</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/matches">Find matches</a>
+        <a href="/requests">Requests</a>
+        <a href="/notifications">Notifications{% if unread_notifications %} ({{ unread_notifications }}){% endif %}</a>
+        {% if is_admin %}<a href="/admin">Admin</a>{% endif %}
+        <a href="/logout">Log out</a>
+    </div>
+</nav>
+<main class="page-wrap">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Your workspace</p>
+            <h1>Good to see you, {{ name }}</h1>
+            <p>Keep your skills up to date to find the right people to learn with.</p>
+        </div>
+        <a class="button secondary" href="/matches">Explore matches</a>
+    </div>
+    <div class="flash-list">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        {% endwith %}
+    </div>
+    <section class="stats-row dashboard-stats" aria-label="Skill profile summary">
+        <div class="stat"><strong>{{ known_skills|length }}</strong><span>Skills you can share</span></div>
+        <div class="stat"><strong>{{ wanted_skills|length }}</strong><span>Skills you want to learn</span></div>
+        <div class="stat"><strong>{{ known_skills|length + wanted_skills|length }}</strong><span>Total profile skills</span></div>
+        <div class="stat"><strong>{{ pending_requests }}</strong><span>Pending requests</span></div>
+    </section>
+    <section class="panel profile-panel" aria-labelledby="profile-heading">
+        <div class="profile-card-heading">
+            <div class="profile-avatar" aria-hidden="true">{{ name[:1]|upper }}</div>
+            <div>
+                <p class="eyebrow">Member profile</p>
+                <h2 id="profile-heading">{{ name }}</h2>
+                <p>Keep your details current so other members can get to know you.</p>
+            </div>
+            <span class="panel-symbol" aria-hidden="true">◎</span>
+        </div>
+        <div class="profile-rating">
+            <strong>{% if average_rating %}{{ "%.1f"|format(average_rating) }} / 5{% else %}New member{% endif %}</strong>
+            <span>{% if rating_count %}{{ rating_count }} member review{% if rating_count != 1 %}s{% endif %}{% else %}No reviews yet{% endif %}</span>
+        </div>
+        <form id="profile-form" action="/update_profile" method="POST" class="profile-form">
+            <div class="profile-fields">
+                <div>
+                    <label for="name">Full name</label>
+                    <input id="name" type="text" name="name" value="{{ name }}" maxlength="100" autocomplete="name" required>
+                </div>
+                <div>
+                    <label for="location">Location</label>
+                    <input id="location" type="text" name="location" value="{{ location }}" maxlength="100" placeholder="e.g. Toronto, Canada" autocomplete="address-level2">
+                </div>
+                <div>
+                    <label for="phone">Phone number</label>
+                    <input id="phone" type="tel" name="phone" value="{{ phone }}" maxlength="30" placeholder="e.g. +1 555 0100" autocomplete="tel">
+                </div>
+                <div>
+                    <label for="linkedin">LinkedIn profile</label>
+                    <input id="linkedin" type="url" name="linkedin" value="{{ linkedin }}" maxlength="300" placeholder="https://linkedin.com/in/yourname" autocomplete="url">
+                </div>
+                <div>
+                    <label for="website">Website or portfolio</label>
+                    <input id="website" type="url" name="website" value="{{ website }}" maxlength="300" placeholder="https://yourwebsite.com" autocomplete="url">
+                </div>
+                <div>
+                    <label for="experience_level">Experience level</label>
+                    <select id="experience_level" name="experience_level">
+                        <option value="">Choose a level</option>
+                        {% for level in experience_levels %}
+                        <option value="{{ level }}" {% if experience_level == level %}selected{% endif %}>{{ level }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="interests">Interests</label>
+                    <input id="interests" type="text" name="interests" value="{{ interests }}" maxlength="300" placeholder="e.g. design, hiking, languages">
+                </div>
+                <div class="bio-field">
+                    <label for="bio">Short bio</label>
+                    <textarea id="bio" name="bio" rows="3" maxlength="280" placeholder="What are you interested in sharing or learning?">{{ bio }}</textarea>
+                    <small>Up to 280 characters</small>
+                </div>
+            </div>
+        </form>
+        <div class="profile-actions">
+            <button type="submit" form="profile-form">Save changes</button>
+            <form action="/clear_profile" method="POST" onsubmit="return confirm('Clear your optional profile details? Your account, name, and skills will stay unchanged.')">
+                <button class="button danger" type="submit">Clear profile details</button>
+            </form>
+        </div>
+    </section>
+    <section class="skill-grid" aria-label="Manage your skills">
+        <article class="panel">
+            <div class="panel-heading">
+                <div><h2>What I can teach</h2><p>Share the skills you are confident in.</p></div>
+                <span class="panel-symbol" aria-hidden="true">+</span>
+            </div>
+            <form class="skill-form" action="/add_skill" method="POST">
+                <input type="text" name="skill" placeholder="e.g. Python, photography" maxlength="60" required aria-label="Skill you can teach">
+                <select name="category" aria-label="Teaching skill category">
+                    {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
+                </select>
+                <button type="submit">Add skill</button>
+            </form>
+            {% if known_skills %}
+            <div class="skill-list">
+                {% for skill in known_skills %}
+                <div class="skill-chip">{{ skill.name }} <small>{{ skill.category }}</small>
+                    <details class="skill-edit">
+                        <summary aria-label="Edit {{ skill.name }}" title="Edit skill">Edit</summary>
+                        <form action="/update_skill" method="POST">
+                            <input type="hidden" name="old_skill" value="{{ skill.name }}"><input type="hidden" name="kind" value="known">
+                            <input type="text" name="new_skill" value="{{ skill.name }}" maxlength="60" required aria-label="Updated skill name">
+                            <select name="category" aria-label="Updated skill category">
+                                {% for category in categories %}<option value="{{ category }}" {% if skill.category == category %}selected{% endif %}>{{ category }}</option>{% endfor %}
+                            </select>
+                            <button type="submit">Save</button>
+                        </form>
+                    </details>
+                    <form action="/remove_skill" method="POST">
+                        <input type="hidden" name="skill" value="{{ skill.name }}"><input type="hidden" name="kind" value="known">
+                        <button type="submit" aria-label="Remove {{ skill.name }}" title="Remove skill">×</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}<p class="empty-inline">Your teaching skills will appear here.</p>{% endif %}
+        </article>
+        <article class="panel">
+            <div class="panel-heading">
+                <div><h2>What I want to learn</h2><p>Tell the community what you are curious about.</p></div>
+                <span class="panel-symbol" aria-hidden="true">↗</span>
+            </div>
+            <form class="skill-form" action="/add_wanted_skill" method="POST">
+                <input type="text" name="skill" placeholder="e.g. public speaking, design" maxlength="60" required aria-label="Skill you want to learn">
+                <select name="category" aria-label="Learning skill category">
+                    {% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}
+                </select>
+                <button type="submit">Add goal</button>
+            </form>
+            {% if wanted_skills %}
+            <div class="skill-list">
+                {% for skill in wanted_skills %}
+                <div class="skill-chip">{{ skill.name }} <small>{{ skill.category }}</small>
+                    <details class="skill-edit">
+                        <summary aria-label="Edit {{ skill.name }}" title="Edit skill">Edit</summary>
+                        <form action="/update_skill" method="POST">
+                            <input type="hidden" name="old_skill" value="{{ skill.name }}"><input type="hidden" name="kind" value="wanted">
+                            <input type="text" name="new_skill" value="{{ skill.name }}" maxlength="60" required aria-label="Updated skill name">
+                            <select name="category" aria-label="Updated skill category">
+                                {% for category in categories %}<option value="{{ category }}" {% if skill.category == category %}selected{% endif %}>{{ category }}</option>{% endfor %}
+                            </select>
+                            <button type="submit">Save</button>
+                        </form>
+                    </details>
+                    <form action="/remove_skill" method="POST">
+                        <input type="hidden" name="skill" value="{{ skill.name }}"><input type="hidden" name="kind" value="wanted">
+                        <button type="submit" aria-label="Remove {{ skill.name }}" title="Remove skill">×</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}<p class="empty-inline">Your learning goals will appear here.</p>{% endif %}
+        </article>
+    </section>
+    <section class="dashboard-section">
+        <div class="section-title"><h2>Learning progress</h2><span>{{ active_exchanges|length + completed_exchanges|length }}</span></div>
+        {% if active_exchanges %}
+        <div class="request-list">
+            {% for exchange in active_exchanges %}
+            <article class="request-card">
+                <span class="avatar" aria-hidden="true">{{ exchange.partner_name[:1]|upper }}</span>
+                <div class="request-copy"><h3>{{ exchange.partner_name }}</h3><p>Active exchange: <strong>{{ exchange.skill }}</strong></p></div>
+                <span class="request-status accepted">In progress</span>
+                <form action="/complete_exchange" method="POST">
+                    <input type="hidden" name="sender_email" value="{{ exchange.sender_email }}">
+                    <input type="hidden" name="recipient_email" value="{{ exchange.recipient_email }}">
+                    <input type="hidden" name="skill" value="{{ exchange.skill }}">
+                    <button type="submit">Mark complete</button>
+                </form>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="request-empty"><p>No active exchanges yet. Accepted requests will appear here.</p><a class="text-link" href="/requests">Review requests</a></div>
+        {% endif %}
+        {% if completed_exchanges %}
+        <div class="section-title completed-title"><h2>Completed exchanges</h2><span>{{ completed_exchanges|length }}</span></div>
+        <div class="request-list">
+            {% for exchange in completed_exchanges %}
+            <article class="request-card">
+                <span class="avatar alt" aria-hidden="true">{{ exchange.partner_name[:1]|upper }}</span>
+                <div class="request-copy"><h3>{{ exchange.partner_name }}</h3><p>Completed exchange: <strong>{{ exchange.skill }}</strong></p></div>
+                <span class="request-status accepted">Completed</span>
+                {% if exchange.can_rate %}
+                <form class="review-form" action="/review_exchange" method="POST">
+                    <input type="hidden" name="sender_email" value="{{ exchange.sender_email }}">
+                    <input type="hidden" name="recipient_email" value="{{ exchange.recipient_email }}">
+                    <input type="hidden" name="skill" value="{{ exchange.skill }}">
+                    <label>Rate your experience
+                        <select name="rating" required>
+                            <option value="">Rating</option>
+                            {% for score in range(5, 0, -1) %}<option value="{{ score }}">{{ score }} / 5</option>{% endfor %}
+                        </select>
+                    </label>
+                    <input type="text" name="comment" maxlength="500" placeholder="Add a short review (optional)">
+                    <button type="submit">Submit review</button>
+                </form>
+                {% else %}<span class="request-status">Reviewed</span>{% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+    <section class="dashboard-section notifications-panel">
+        <div class="section-title">
+            <h2>Recent notifications</h2>
+            {% if unread_notifications %}<span>{{ unread_notifications }} new</span>{% endif %}
+        </div>
+        {% if notifications %}
+        <div class="notification-list">
+            {% for notification in notifications %}
+            <a class="notification-item {% if not notification.read %}unread{% endif %}" href="{{ notification.url }}">
+                <span class="notification-dot" aria-hidden="true"></span>
+                <span>{{ notification.message }}</span>
+                <small>{{ notification.created_at }}</small>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}<div class="request-empty"><p>You’re all caught up. Updates about requests and exchanges will show here.</p></div>{% endif %}
+        {% if unread_notifications %}
+        <form action="/notifications/read_all" method="POST" class="notifications-action"><button class="button secondary" type="submit">Mark all as read</button></form>
+        {% endif %}
+    </section>
+    <section class="next-step">
+        <div><h2>Ready to learn from someone new?</h2><p>We’ll look for people who can teach the skills on your list.</p></div>
+        <a class="button" href="/matches">View skill matches</a>
+    </section>
+</main>
+</body>
+</html>
